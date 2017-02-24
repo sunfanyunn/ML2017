@@ -1,5 +1,4 @@
 from PIL import Image
-from PIL import ImageChops
 import sys
 
 x = Image.open(sys.argv[1])
