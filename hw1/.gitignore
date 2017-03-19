@@ -3,5 +3,5 @@ train.csv
 test_X.csv
 .nfs*
 tmpfile
-*.swp
+.*.swp
 *.png
