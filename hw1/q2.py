@@ -32,9 +32,9 @@ features=['PM2.5', 'PM10', 'O3', 'CH4', 'CO', 'NMHC', 'AMB_TEMP', 'NO', 'NO2',
 dic = {'AMB_TEMP':0, 'CH4':1, 'CO':2, 'NMHC':3, 'NO':4, 'NO2':5, 'NOx':6,
        'O3':7, 'PM10':8, 'PM2.5':9, 'RAINFALL':10, 'RH':11, 'SO2':12, 'THC':13,
        'WD_HR':14, 'WIND_DIREC':15, 'WIND_SPEED':16, 'WS_HR':17}
-assert len(features) == 18
+FEATURESIZE=len(features)
 for ff in features:
-    dic[ ff+"**2" ] = dic[ff]+18
+    dic[ ff+"**2" ] = dic[ff]+FEATURESIZE
 assert len(dic)==36
 
 
@@ -54,63 +54,64 @@ validateDataAns=[]
 normalizedTrainData=[]
 #Final Answer
 res=[]
+b=0.0
 #For normalization
 mean=[]
 deviation=[]
 
 def f(X):
-    global res
+    global res, b
     ret=0.0
     assert len(res)==len(trainData[0])
     resLen=len(trainData[0])
     for i in range(resLen):
         ret += res[i]*float(X[i])
-    return ret
+    return ret#+b
 
 def error():
     dataSize=len(trainData)
     tmp=np.array( [f(trainData[i]) for i in range(dataSize)] )
     tmp=tmp-dataAns
     return np.sqrt( sum(np.square(tmp))/dataSize )
+
 def validateError():
     dataSize=len(validateData)
     tmp=np.array( [f(validateData[i]) for i in range(dataSize)] )
     tmp=tmp-validateDataAns
     return np.sqrt( sum(np.square(tmp))/dataSize )
 
-def adagrad(totalMonth=12, iteration=3000, stepSize=1e-2, fudgeFactor=1e-6, lam=500):
-    global res, startTime, trainData, dataAns
-    cnt=sum(paraCnt)
+def adagrad(totalEntry, iteration=1000, stepSize=1e-2, fudgeFactor=1e-6, lam=100):
+    global res, startTime, trainData, dataAns, b
+
+    cnt=len(trainData[0])
+    assert sum(paraCnt)+1==cnt
+
     res=np.array([0.0 for i in range(cnt)])
     G=np.array([0.0 for i in range(cnt)])
 
-    print("start training")
+    #print("start training")
     #bG=0
-    dataSize = len(trainData)
-
-    assert dataSize%totalMonth==0
-    dataSize = int(dataSize/totalMonth)
 
     for it in range(iteration):
         if time.time()-startTime > 598:
             return
-        for mon in range(totalMonth):
-            miniBatch = trainData[mon*dataSize:(mon+1)*dataSize,: ]
-            miniBatchAns = dataAns[mon*dataSize:(mon+1)*dataSize]
-            tmpAns=miniBatch.dot(res)
-            assert len(tmpAns) == len(miniBatch)
-            grad=np.array( [-2*sum( (miniBatch[:,i])*(miniBatchAns-tmpAns) ) for i in range(cnt)] )
-            #bGrad=-2*sum(dataAns-tmpAns)
-            #bG = bG + np.square(bGrad)
-            G = G + np.square(grad)
-            res=res-stepSize*(grad/np.sqrt(G))
-            #b=b-stepSize*(bGrad/np.sqrt(bG))
-
+        miniBatch = trainData[:totalEntry,:]
+        miniBatchAns = dataAns[:totalEntry]
+        tmpAns=miniBatch.dot(res)
+        assert len(tmpAns) == len(miniBatch)
+        grad=np.array( [2*lam*res[i]-2*sum( (miniBatch[:,i])*(miniBatchAns-tmpAns) ) for i in range(cnt)] )
+        #bGrad=-2*sum(miniBatchAns-tmpAns)
+        #bG = bG + np.square(bGrad)
+        G = G + np.square(grad)
+        res=res-stepSize*(grad/(fudgeFactor+np.sqrt(G)))
+        #b=b-stepSize*(bGrad/np.sqrt(bG))
+        '''
         if it%100 ==0:
             print(error())
             print (res)
+            '''
 
-    print("end training")
+    #print("end training")
     return
 
 def linalg():
@@ -205,6 +206,8 @@ def processData():
     assert len(trainData)==len(dataAns)
 
     trainData=np.array(trainData)
+    #append a column of ones
+    trainData = np.c_[ trainData, np.ones(len(trainData)) ]
     dataAns=np.array(dataAns)
 
     #Normalize
@@ -229,7 +232,7 @@ def calc():
     for item in arr:
         print (item[0], item[1])
 
-def crossValidation():
+def crossValidation(totalEntry):
     global trainData, dataAns, validateData, validateDataAns
     print(len(trainData))
     dataSize=len(trainData)
@@ -251,70 +254,30 @@ def crossValidation():
 
         assert( len(trainData)*12/11 == len(tmpTrainData) )
 
-        linalg()
-        #adagrad(11)
+        #linalg()
+        adagrad(totalEntry)
         validationError.append(validateError())
 
         trainData=copy.deepcopy(tmpTrainData)
         dataAns=copy.deepcopy(tmpDataAns)
     #print("Cross Validation: %f" %(sum(validationError)/12) )
-    return (max(validationError), sum(validationError)/12)
+    #return (max(validationError), sum(validationError)/12)
+    return sum(validationError)/12
 
 getData()
+# Current Best
 addData('PM2.5', 9)
-addData('PM2.5**2', 9)
-addData('PM10', 9)
-addData('PM10**2', 9)
+addData('PM2.5**2', 6)
+addData('PM10', 8)
+addData('PM10**2', 6)
 addData('O3', 3)
 addData('RAINFALL', 2)
-addData('NOx', 1)
-addData('NO2**2', 1)
-addData('NO2', 3)
-addData('SO2', 1)
+addData('NO2', 1)
 
+tmp = int(sys.argv[1])
 processData()
-#print(crossValidation())
+print(crossValidation(tmp))
+adagrad(tmp)
 #linalg()
-#print(error())
-#print(res)
-adagrad()
+#writeResult()
 print(error())
-writeResult()
-'''
-res =[
- -0.0245953363197,
- 0.00543147729409,
- 0.107525100336,
- -0.136098380784,
- 0.0197225252391,
- 0.14834208727,
- -0.185823748118,
- 0.137097587823,
- 0.677825576718,
-
- 0.00299175488044,
- -0.0040260831014,
- -0.000836853157474,
- 0.0032621548918,
-
--0.0188549323735,
-0.00135283847849,
-0.00635244063715,
--0.0222112332366,
-0.08227532717,
-
- -4.92491489646e-05,
-
- 0.231419896634,
-
- -0.0443457852013,
- -0.00190880180795,
- 0.0851226615262,
-
- -0.0585615659587,
- -0.089182982622,
-
- -0.405631318112
- ]
- '''
-
