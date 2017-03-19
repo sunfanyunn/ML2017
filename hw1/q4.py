@@ -79,7 +79,7 @@ def validateError():
     tmp=tmp-validateDataAns
     return np.sqrt( sum(np.square(tmp))/dataSize )
 
-def adagrad(lam, iteration=1000, stepSize=1e-2, fudgeFactor=1e-6):
+def adagrad(lam, iteration=500, stepSize=1e-2, fudgeFactor=1e-6):
     global res, startTime, trainData, dataAns
     totalEntry = len(trainData)
     cnt=len(trainData[0])

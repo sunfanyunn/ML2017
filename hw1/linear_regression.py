@@ -13,13 +13,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-'''
 trainFile=sys.argv[1]
 testFile=sys.argv[2]
 resFile=sys.argv[3]
+
 '''
-'''
-train=pd.read_csv('train.csv', encoding='latin1')
+train=pd.read_csv(trainFile, encoding='latin1')
 train=train.drop(train.columns[[0,1]], axis=1)
 train=train.rename(columns={train.columns[0]:'type'})
 train=train[train.type=='PM2.5']
@@ -54,19 +53,18 @@ validateDataAns=[]
 normalizedTrainData=[]
 #Final Answer
 res=[]
-b=0.0
 #For normalization
 mean=[]
 deviation=[]
 
 def f(X):
-    global res, b
+    global res
     ret=0.0
     assert len(res)==len(trainData[0])
     resLen=len(trainData[0])
     for i in range(resLen):
         ret += res[i]*float(X[i])
-    return ret+b
+    return ret
 
 def error():
     dataSize=len(trainData)
@@ -80,13 +78,12 @@ def validateError():
     return np.sqrt( sum(np.square(tmp))/dataSize )
 
 def adagrad(totalMonth=12, iteration=8000, stepSize=1e-2, fudgeFactor=1e-6, lam=500):
-    global res, startTime, trainData, dataAns, b
-    cnt=sum(paraCnt)
+    global res, startTime, trainData, dataAns
+    cnt=sum(paraCnt)+1
     res=np.array([0.0 for i in range(cnt)])
     G=np.array([0.0 for i in range(cnt)])
 
     print("start training")
-    bG=0
     dataSize = len(trainData)
 
     assert dataSize%totalMonth==0
@@ -101,15 +98,12 @@ def adagrad(totalMonth=12, iteration=8000, stepSize=1e-2, fudgeFactor=1e-6, lam=
             tmpAns=miniBatch.dot(res)
             assert len(tmpAns) == len(miniBatch)
             grad=np.array( [-2*sum( (miniBatch[:,i])*(miniBatchAns-tmpAns) ) for i in range(cnt)] )
-            bGrad=-2*sum(miniBatchAns-tmpAns)
-            bG = bG + np.square(bGrad)
             G = G + np.square(grad)
             res=res-stepSize*(grad/np.sqrt(G))
-            b=b-stepSize*(bGrad/np.sqrt(bG))
 
         if it%100 ==0:
             print(error())
-            print (res, b)
+            print (res)
 
     print("end training")
     return
@@ -125,7 +119,7 @@ def linalg():
 def writeResult():
     global mean, deviation, res
     arrx=[[] for i in range(len(dic))]
-    with open('test_X.csv', 'r', encoding = 'big5') as csvfile:
+    with open(testFile, 'r', encoding = 'big5') as csvfile:
         csv_f = csv.reader(csvfile)
         for row in csv_f:
             if row[1] == 'RAINFALL':
@@ -145,26 +139,24 @@ def writeResult():
     for i in range(len(dic)):
         assert len(arrx[i])==9*240
 
-    with open('res.csv', 'w') as csvfile:
+    with open(resFile, 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['id', 'value'])
-        featureSize=sum(paraCnt)
         for i in range(240):
             endIndex=9*(i+1)
             X=[]
             for j in range(len(para)):
                 X += arrx[para[j]][endIndex-paraCnt[j]:endIndex]
-            assert len(X)==featureSize
             #Normalize
             '''
             for j in range(featureSize):
                 X[j] = (X[j]-mean[j])/deviation[j]
             '''
-            assert len(X) == featureSize
-            writer.writerow( ('id_'+str(i), f( X ) ) )
+            assert len(X) == sum(paraCnt)
+            writer.writerow( ('id_'+str(i), f( X+[1] ) ) )
 
 def getData():
-    f = open("train.csv", "r", encoding = 'big5')
+    f = open(trainFile, "r", encoding = 'big5')
     csv_f = csv.reader(f)
     next(csv_f)
     for row in csv_f:
@@ -206,8 +198,8 @@ def processData():
     assert len(trainData)==len(dataAns)
 
     trainData=np.array(trainData)
-
-    #trainData = np.c_[ trainData, np.ones(len(trainData)) ]
+    #append a column of ones
+    trainData = np.c_[ trainData, np.ones(len(trainData)) ]
 
     dataAns=np.array(dataAns)
 
@@ -274,65 +266,10 @@ addData('PM10**2', 6)
 addData('O3', 3)
 addData('RAINFALL', 2)
 addData('NO2', 1)
-'''
-#Daikon Parameter
-addData('PM2.5', 9)
-addData('PM2.5**2', 4)
-addData('PM10', 5)
-addData('PM10**2', 1)
-addData('NO2', 1)
-addData('O3', 3)
-addData('RAINFALL', 2)
-res =[
- -0.0245953363197,
- 0.00543147729409,
- 0.107525100336,
- -0.136098380784,
- 0.0197225252391,
- 0.14834208727,
- -0.185823748118,
- 0.137097587823,
- 0.677825576718,
-
- 0.00299175488044,
- -0.0040260831014,
- -0.000836853157474,
- 0.0032621548918,
-
--0.0188549323735,
-0.00135283847849,
-0.00635244063715,
--0.0222112332366,
-0.08227532717,
-
- -4.92491489646e-05,
-
- 0.231419896634,
-
- -0.0443457852013,
- -0.00190880180795,
- 0.0851226615262,
-
- -0.0585615659587,
- -0.089182982622,
-
- -0.405631318112
- ]
-#add b
-'''
-'''
-#baloneymath parameter
-addData('PM2.5', 9)
-addData('PM10', 5)
-addData('PM2.5**2', 4)
-addData('PM10**2', 2)
-addData('O3', 3)
-addData('RAINFALL', 2)
-'''
 
 processData()
 #print(crossValidation())
-#adagrad()
-linalg()
+adagrad()
+#linalg()
 writeResult()
 print(error())

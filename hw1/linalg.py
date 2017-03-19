@@ -13,11 +13,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-'''
 trainFile=sys.argv[1]
 testFile=sys.argv[2]
 resFile=sys.argv[3]
-'''
 '''
 train=pd.read_csv('train.csv', encoding='latin1')
 train=train.drop(train.columns[[0,1]], axis=1)
@@ -54,19 +52,18 @@ validateDataAns=[]
 normalizedTrainData=[]
 #Final Answer
 res=[]
-b=0.0
 #For normalization
 mean=[]
 deviation=[]
 
 def f(X):
-    global res, b
+    global res
     ret=0.0
     assert len(res)==len(trainData[0])
     resLen=len(trainData[0])
     for i in range(resLen):
         ret += res[i]*float(X[i])
-    return ret+b
+    return ret
 
 def error():
     dataSize=len(trainData)
@@ -125,7 +122,7 @@ def linalg():
 def writeResult():
     global mean, deviation, res
     arrx=[[] for i in range(len(dic))]
-    with open('test_X.csv', 'r', encoding = 'big5') as csvfile:
+    with open(testFile, 'r', encoding = 'big5') as csvfile:
         csv_f = csv.reader(csvfile)
         for row in csv_f:
             if row[1] == 'RAINFALL':
@@ -145,7 +142,7 @@ def writeResult():
     for i in range(len(dic)):
         assert len(arrx[i])==9*240
 
-    with open('res.csv', 'w') as csvfile:
+    with open(resFile, 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['id', 'value'])
         featureSize=sum(paraCnt)
@@ -164,7 +161,7 @@ def writeResult():
             writer.writerow( ('id_'+str(i), f( X ) ) )
 
 def getData():
-    f = open("train.csv", "r", encoding = 'big5')
+    f = open(trainFile, "r", encoding = 'big5')
     csv_f = csv.reader(f)
     next(csv_f)
     for row in csv_f:
@@ -268,9 +265,9 @@ getData()
 
 # Current Best
 addData('PM2.5', 9)
-addData('PM2.5**2', 6)
+addData('PM2.5**2', 9)
 addData('PM10', 8)
-addData('PM10**2', 6)
+addData('PM10**2', 8)
 addData('O3', 3)
 addData('RAINFALL', 2)
 addData('NO2', 1)
