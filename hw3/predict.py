@@ -3,18 +3,12 @@ import sys
 import pandas as pd
 import numpy as np
 from keras.models import Sequential, load_model
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.advanced_activations import LeakyReLU, PReLU
-from keras.layers.convolutional import Conv2D
-from keras.layers.pooling import MaxPooling2D
-from keras.optimizers import SGD, Adam
-from keras.utils import np_utils
-from keras.regularizers import l1, l2
-#from keras.datasets import mnist
-#categorical_crossentropy
+
+testFile = sys.argv[1]
+outputFile = sys.argv[2]
 
 def load_data():
-    test_df = pd.read_csv("test.csv")
+    test_df = pd.read_csv(testFile)
     x_test = np.array( [ list(map(float, test_df["feature"][i].split())) for i in range(len(test_df)) ] )
     #y_test = np.array( test_df["label"] )
     x_test/=255
@@ -28,7 +22,7 @@ def main():
     model = load_model('model_tmp')
     prd_class = model.predict_classes(x_test)
 
-    with open('res.csv', 'w') as f:
+    with open(outputFile, 'w') as f:
         csv_writer = csv.writer(f)
         csv_writer.writerow(['id', 'label'])
         for i in range(len(x_test)):
