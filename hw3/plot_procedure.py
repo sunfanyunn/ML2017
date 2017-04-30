@@ -1,3 +1,4 @@
+import os
 import sys
 import pandas as pd
 import numpy as np
@@ -9,36 +10,79 @@ from keras.layers.pooling import MaxPooling2D
 from keras.optimizers import SGD, Adam
 from keras.utils import np_utils
 from keras.regularizers import l1, l2
+trainFile=sys.argv[1]
 
+from keras.callbacks import Callback
+from keras.callbacks import ModelCheckpoint
+
+class History(Callback):
+    def on_train_begin(self,logs={}):
+        self.tr_losses=[]
+        self.val_losses=[]
+        self.tr_accs=[]
+        self.val_accs=[]
+
+    def on_epoch_end(self,epoch,logs={}):
+        '''
+        self.tr_losses.append(logs.get('loss'))
+        self.val_losses.append(logs.get('val_loss'))
+        self.tr_accs.append(logs.get('acc'))
+        self.val_accs.append(logs.get('val_acc'))
+        '''
+        self.tr_losses = [ logs.get('loss') ]
+        self.val_losses = [ logs.get('val_loss') ]
+        self.tr_accs = [ logs.get('acc') ]
+        self.val_accs = [ logs.get('val_acc') ]
+        dump_history(self)
+
+def dump_history(logs,store_path='./cnn'):
+    with open(os.path.join(store_path,'train_loss'),'a') as f:
+        for loss in logs.tr_losses:
+            f.write('{}\n'.format(loss))
+    with open(os.path.join(store_path,'train_accuracy'),'a') as f:
+        for acc in logs.tr_accs:
+            f.write('{}\n'.format(acc))
+    with open(os.path.join(store_path,'valid_loss'),'a') as f:
+        for loss in logs.val_losses:
+            f.write('{}\n'.format(loss))
+    with open(os.path.join(store_path,'valid_accuracy'),'a') as f:
+        for acc in logs.val_accs:
+            f.write('{}\n'.format(acc))
+
+epilson = 4
 def expand(x_train, y_train):
-
-    fx_train = np.empty((x_train.shape[0]*12, 48, 48, 1))
-    fy_train = np.empty(len(y_train)*12)
+    per = 12
+    fx_train = np.empty((x_train.shape[0]*per, 48, 48, 1))
+    fy_train = np.empty(len(y_train)*per)
 
     for ind in range(0, len(x_train)):
         tmp = x_train[ind]
-        i = 12*ind
+        i = per*ind
         fx_train[i+0] = np.pad(tmp[0:42,0:42,:], ((3,3),(3,3),(0,0)), 'constant')
         fx_train[i+1] = np.pad(tmp[6:48,0:42,:], ((3,3),(3,3),(0,0)), 'constant')
         fx_train[i+2] = np.pad(tmp[6:48,6:48,:], ((3,3),(3,3),(0,0)), 'constant')
         fx_train[i+3] = np.pad(tmp[0:42,6:48,:], ((3,3),(3,3),(0,0)), 'constant')
         fx_train[i+4] = np.pad(tmp[3:45,3:45,:], ((3,3),(3,3),(0,0)), 'constant')
-        for j in range(5):
-            fx_train[i+5+j] = np.fliplr(fx_train[i+j])
+        for j in range(5): fx_train[i+5+j] = np.fliplr(fx_train[i+j])
         fx_train[i+10] = tmp
         fx_train[i+11] = np.fliplr(tmp)
-        fy_train[i:i+12] = y_train[ind]
+
+        #for j in range(12):
+        #    fx_train[12+j] = fx_train[j] + epilson*np.random.random((48, 48, 1))
+
+        fy_train[i:i+per] = y_train[ind]
 
     return fx_train, fy_train
 
 def load_data():
-    number = 4000
+    #number = 4000
 
-    train_df = pd.read_csv("train.csv")
-    #test_df = pd.read_csv("")
+    train_df = pd.read_csv(trainFile)
+    test_df = pd.read_csv("ans.csv")
 
-    test_df = train_df.iloc[0:number]
-    train_df = train_df.iloc[number:]
+    #test_df = train_df.iloc[0:number]
+    #train_df = train_df.iloc[number:]
+
     x_train = np.array( [ list(map(float,train_df["feature"].iloc[i].split())) for i in range(len(train_df)) ] )
     x_test = np.array( [ list(map(float, test_df["feature"].iloc[i].split())) for i in range(len(test_df)) ] )
     x_train = x_train.astype('float32')
@@ -99,7 +143,7 @@ def main():
     model.add(Dropout(0.5))
 
     model.add(Flatten())
-    model.add(Dense(1024))
+    model.add(Dense(2048))
     model.add(Dropout(0.5))
     model.add(Dense(1024))
     model.add(Dropout(0.5))
@@ -111,11 +155,14 @@ def main():
     #sgd = SGD(lr=0.005, decay=0.00001, momentum=0.9)
     sgd = SGD(lr=0.005, decay=0.00001, momentum=0.9)
     model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-    model.fit(x_train, y_train, batch_size=50, epochs=150, validation_data=(x_test, y_test))
+    history = History()
+    checkpointer = ModelCheckpoint(filepath="best_model", verbose=1, save_best_only=True)
+    model.fit(x_train, y_train, batch_size=30, epochs=50, \
+            validation_data=(x_test, y_test), callbacks=[history, checkpointer])
+    dump_history(history)
 
     score = model.evaluate(x_test, y_test)
     print ('Train Acc:', score[1] )
-    model.save("model_tmp")
+    model.save("testing_model")
 
 main()
-

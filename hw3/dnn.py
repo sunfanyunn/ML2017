@@ -1,3 +1,4 @@
+import os
 import sys
 import pandas as pd
 import numpy as np
@@ -9,6 +10,48 @@ from keras.layers.pooling import MaxPooling2D
 from keras.optimizers import SGD, Adam
 from keras.utils import np_utils
 from keras.regularizers import l1, l2
+
+from keras.callbacks import Callback
+from keras.callbacks import ModelCheckpoint
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.3
+set_session(tf.Session(config=config))
+
+class History(Callback):
+    def on_train_begin(self,logs={}):
+        self.tr_losses=[]
+        self.val_losses=[]
+        self.tr_accs=[]
+        self.val_accs=[]
+
+    def on_epoch_end(self,epoch,logs={}):
+        '''
+        self.tr_losses.append(logs.get('loss'))
+        self.val_losses.append(logs.get('val_loss'))
+        self.tr_accs.append(logs.get('acc'))
+        self.val_accs.append(logs.get('val_acc'))
+	'''
+        self.tr_losses = [ logs.get('loss') ]
+        self.val_losses = [ logs.get('val_loss') ]
+        self.tr_accs = [ logs.get('acc') ]
+        self.val_accs = [ logs.get('val_acc') ]
+        dump_history(self)
+
+def dump_history(logs,store_path='./dnn'):
+    with open(os.path.join(store_path,'train_loss'),'a') as f:
+        for loss in logs.tr_losses:
+            f.write('{}\n'.format(loss))
+    with open(os.path.join(store_path,'train_accuracy'),'a') as f:
+        for acc in logs.tr_accs:
+            f.write('{}\n'.format(acc))
+    with open(os.path.join(store_path,'valid_loss'),'a') as f:
+        for loss in logs.val_losses:
+            f.write('{}\n'.format(loss))
+    with open(os.path.join(store_path,'valid_accuracy'),'a') as f:
+        for acc in logs.val_accs:
+            f.write('{}\n'.format(acc))
 
 def expand(x_train, y_train):
 
@@ -35,10 +78,11 @@ def load_data():
     number = 4000
 
     train_df = pd.read_csv("train.csv")
-    test_df = pd.read_csv("ans.csv")
+    #test_df = pd.read_csv("")
 
-    #test_df = train_df.iloc[0:number]
-    #train_df = train_df.iloc[number:]
+    test_df = train_df.iloc[0:number]
+    train_df = train_df.iloc[number:]
+
     x_train = np.array( [ list(map(float,train_df["feature"].iloc[i].split())) for i in range(len(train_df)) ] )
     x_test = np.array( [ list(map(float, test_df["feature"].iloc[i].split())) for i in range(len(test_df)) ] )
     x_train = x_train.astype('float32')
@@ -135,11 +179,12 @@ def main():
     #sgd = SGD(lr=0.005, decay=0.00001, momentum=0.9)
     sgd = SGD(lr=0.005, decay=0.00001, momentum=0.9)
     model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-    print(x_train.shape)
-    print(x_test.shape)
-    print(y_train.shape)
-    print(y_test.shape)
-    model.fit(x_train, y_train, batch_size=50, epochs=150, validation_data=(x_test, y_test))
+
+    history = History()
+    checkpointer = ModelCheckpoint(filepath="best_model", verbose=1, save_best_only=True)
+    model.fit(x_train, y_train, batch_size=30, epochs=50, \
+            validation_data=(x_test, y_test), callbacks=[history, checkpointer])
+    dump_history(history)
 
     score = model.evaluate(x_test, y_test)
     print ('Train Acc:', score[1] )
