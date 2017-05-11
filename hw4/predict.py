@@ -53,5 +53,6 @@ def main():
     print("fitting...")
     clf.fit(x_train, y_train)
     print("end fitting")
+    writeResult()
 
 main()
