@@ -19,13 +19,15 @@ def predict(X, clf):
     return clf.predict( xx )
 
 def writeResult(clf):
-    X = np.load(inputFile)
+    data = np.load(inputFile)
+    X = np.array( [data[str(i)] for i in range(200)] )
+    print(X.shape)
     prd_dim = predict(X, clf)
     with open(outputFile, 'w') as f:
         csv_writer = csv.writer(f)
         csv_writer.writerow(['setId', 'LogDim'])
-        for i in range(len(x_test)):
-            csv_writer.writerow([i]+[prd_class[i]])
+        for i in range(200):
+            csv_writer.writerow([i]+[np.log(prd_dim[i])])
 
 def raw_predict(X,threshold=0.95):
 
