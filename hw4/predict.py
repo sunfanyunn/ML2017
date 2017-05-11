@@ -3,7 +3,7 @@ import numpy as np
 import csv
 from sklearn.decomposition import PCA
 from sklearn.datasets import make_classification
-from dataGenerator import data_generator
+#from dataGenerator import data_generator
 import matplotlib.pyplot as plt
 from sklearn import tree
 from sklearn.metrics import accuracy_score
