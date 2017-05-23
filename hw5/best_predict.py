@@ -83,11 +83,9 @@ for i in range(ln):
             labels.append( xx )
 
     if len(labels)==0:
-        print("=.=")
         res =  dic_keys[ np.argmax(dic_values) ]
-        print(res)
-        dic_values[ np.argmax(dic_values) ] = 0
         labels.append(res)
+        dic_values[ np.argmax(dic_values) ] = 0
         labels.append(dic_keys[ np.argmax(dic_values) ])
 
     pred.append( labels )
