@@ -252,7 +252,7 @@ def main():
     assert len(tag_list) == 38
 
     (_, X_test,_) = read_data(test_path,False)
-    tokenizer = load_tokenizer( "rnn/tokenizer_pickle")
+    tokenizer = load_tokenizer( "tokenizer_pickle")
     word_index = tokenizer.word_index
 
     ### convert word sequences to index sequence
@@ -274,7 +274,7 @@ def main():
     print ('Get embedding dict from glove.')
 #    embedding_dict = get_embedding_dict('embeddings/glove.6B.%dd.txt'%embedding_dim)
 #    save_embedding_dict(embedding_dict, 'embedding_dict')
-    embedding_dict = load_embedding_dict('rnn/embedding_dict')
+    embedding_dict = load_embedding_dict('embedding_dict')
 
 #    print ('Found %s word vectors.' % len(embedding_dict))
     num_words = len(word_index) + 1
