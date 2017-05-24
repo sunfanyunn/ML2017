@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import os
 
+test_path = sys.argv[1]
+
 tag_list = [
         "SCIENCE-FICTION",
         "SPECULATIVE-FICTION",
@@ -42,6 +44,23 @@ tag_list = [
         "GOTHIC-FICTION",
         "APOCALYPTIC-AND-POST-APOCALYPTIC-FICTION",
         "HIGH-FANTASY"]
+
+def read_data(path):
+    print ('Reading data from ',path)
+    with open(path,'r') as f:
+
+        tags = []
+        articles = []
+        tags_list = []
+
+        f.readline()
+        for line in f:
+            start = line.find(',')
+            article = line[start+1:]
+
+            articles.append(article)
+
+    return articles
 
 
 assert len(tag_list)==38
@@ -90,10 +109,23 @@ for i in range(ln):
 
     pred.append( labels )
 
+test_data = read_data('CSVs/test_data.csv')
+assert len(pred) == 1234
+assert len(test_data) == 1234
+print(test_data[0], pred[0])
+mapping = {}
+for i in range(1234):
+    mapping[test_data[i]] = pred[i]
+
+test_path = sys.argv[1]
+X_test = read_data(test_path)
 output_path = sys.argv[2]
+
 with open(output_path,'w') as output:
     print ('\"id\",\"tags\"',file=output)
-    for index,labels in enumerate(pred):
+
+    for index in range(1234):
+        labels = mapping[ X_test[index] ]
         assert len(labels)>0
         '''
         labels = [tag_list[i] for i,value in enumerate(labels) if value==1 ]
