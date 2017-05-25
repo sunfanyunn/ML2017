@@ -156,13 +156,13 @@ def main():
 
     (_, X_test,_) = read_data(test_path,False)
 
-    tokenizer = load_tokenizer( "best/tokenizer_pickle")
+    tokenizer = load_tokenizer( "best_tokenizer_pickle")
     word_index = tokenizer.word_index
     test_sequences = tokenizer.texts_to_sequences(X_test)
     test_sequences = pad_sequences(test_sequences)
     max_article_length = test_sequences.shape[1]
     print(" max_article_length", max_article_length)
-    embedding_dict = load_embedding_dict('best/embedding_dict')
+    embedding_dict = load_embedding_dict('best_embedding_dict')
     num_words = len(word_index) + 1
     print ('Create embedding matrix.')
     embedding_matrix = get_embedding_matrix(word_index,embedding_dict,num_words,embedding_dim)
