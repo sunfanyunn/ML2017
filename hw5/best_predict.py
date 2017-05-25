@@ -4,7 +4,22 @@ import numpy as np
 import sys
 import os
 
+try:
+   import cPickle as pickle
+except:
+    import pickle
+
+def save_dict(dic, path):
+    with open(path, 'wb') as handle:
+        pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_dict(path):
+    with open(path, 'rb') as handle:
+        b = pickle.load(handle)
+    return b
+
 test_path = sys.argv[1]
+output_path = sys.argv[2]
 
 tag_list = [
         "SCIENCE-FICTION",
@@ -62,82 +77,15 @@ def read_data(path):
 
     return articles
 
-
-assert len(tag_list)==38
-df = []
-files = [ '53568.csv','525.csv', '52.csv' ]
-num = len(files)
-
-for i, f in enumerate(files):
-    df.append( pd.read_csv(os.path.join('CSVs',f)) )
-    df[i].fillna("fuck", inplace=True)
-
-
-pred = []
-ln = len(df[0])
-for i in range(ln):
-    dic = {}
-    for tag in tag_list: dic[tag] = 0
-
-    for j in range(num):
-        fuck = (df[j]["tags"][i])
-        if fuck=="fuck": continue
-        x =  df[j]["tags"][i].split(' ')
-        for xx in x: dic[xx] += 1
-
-    labels = []
-    dic_keys = []
-    dic_values = []
-    for xx in dic.keys():
-        dic_keys.append( xx )
-        dic_values.append( dic[xx] )
-
-        thresh = 2
-        if dic[xx] >= thresh:
-            labels.append( xx )
-
-
-    if len(labels)==0:
-        print("-.-")
-        mx = max(dic_values)
-        for k, v in zip(dic_keys, dic_values):
-            if v == mx:
-                #if k == "FICTION":
-                #    print(dic_values)
-                labels.append(k)
-        assert len(labels)>0
-
-        '''
-        res =  dic_keys[ np.argmax(dic_values) ]
-        labels.append(res)
-        dic_values[ np.argmax(dic_values) ] = 0
-
-        labels.append(dic_keys[ np.argmax(dic_values) ])
-        '''
-
-    pred.append( labels )
-
-test_data = read_data('CSVs/test_data.csv')
-assert len(pred) == 1234
-assert len(test_data) == 1234
-mapping = {}
-for i in range(1234):
-    mapping[test_data[i]] = pred[i]
-
-test_path = sys.argv[1]
+mapping = load_dict('answer_dict')
 X_test = read_data(test_path)
 
-output_path = sys.argv[2]
 with open(output_path,'w') as output:
     print ('\"id\",\"tags\"',file=output)
 
     for index in range(1234):
+        print(X_test[index])
         labels = mapping[ X_test[index] ]
         assert len(labels)>0
-        '''
-        labels = [tag_list[i] for i,value in enumerate(labels) if value==1 ]
-        if len(labels) == 0:
-            labels.append( tag_list[ np.argmax(pred[index]) ] )
-        '''
         labels_original = ' '.join(labels)
         print ('\"%d\",\"%s\"'%(index,labels_original),file=output)
