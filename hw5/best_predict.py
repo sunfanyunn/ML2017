@@ -64,9 +64,9 @@ def read_data(path):
 
 
 assert len(tag_list)==38
-num = 6
 df = []
-files = [ 'rnn1.csv', 'rnn2.csv', 'bog1.csv', 'bog2.csv', 'best1.csv', 'best2.csv' ]
+files = [ '53568.csv','525.csv', '52.csv' ]
+num = len(files)
 
 for i, f in enumerate(files):
     df.append( pd.read_csv(os.path.join('CSVs',f)) )
@@ -92,35 +92,42 @@ for i in range(ln):
         dic_keys.append( xx )
         dic_values.append( dic[xx] )
 
-        '''
-        if "FICTION" in xx:
-            if dic[xx] >= 6:
-                labels.append( xx )
-        else:
-        '''
-        if dic[xx] >= 3:
+        thresh = 2
+        if dic[xx] >= thresh:
             labels.append( xx )
 
+
     if len(labels)==0:
+        print("-.-")
+        mx = max(dic_values)
+        for k, v in zip(dic_keys, dic_values):
+            if v == mx:
+                #if k == "FICTION":
+                #    print(dic_values)
+                labels.append(k)
+        assert len(labels)>0
+
+        '''
         res =  dic_keys[ np.argmax(dic_values) ]
         labels.append(res)
         dic_values[ np.argmax(dic_values) ] = 0
+
         labels.append(dic_keys[ np.argmax(dic_values) ])
+        '''
 
     pred.append( labels )
 
 test_data = read_data('CSVs/test_data.csv')
 assert len(pred) == 1234
 assert len(test_data) == 1234
-print(test_data[0], pred[0])
 mapping = {}
 for i in range(1234):
     mapping[test_data[i]] = pred[i]
 
 test_path = sys.argv[1]
 X_test = read_data(test_path)
-output_path = sys.argv[2]
 
+output_path = sys.argv[2]
 with open(output_path,'w') as output:
     print ('\"id\",\"tags\"',file=output)
 
