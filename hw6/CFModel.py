@@ -35,6 +35,4 @@ class DeepModel(Sequential):
         self.add(Dropout(p_dropout))
         self.add(Dense(k_factors, activation='relu'))
         self.add(Dropout(p_dropout))
-        self.add(Dense(k_factors, activation='relu'))
-        self.add(Dropout(p_dropout))
         self.add(Dense(1, activation='linear'))
