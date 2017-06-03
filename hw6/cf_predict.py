@@ -1,3 +1,8 @@
+
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import sys
 import os
 import pandas as pd
@@ -18,6 +23,7 @@ K_FACTORS = 120
 
 MODEL_WEIGHTS_FILE = 'models/cf_normalize.h5'
 trained_model = CFModel(max_userid+1, max_movieid+1, K_FACTORS)
+
 trained_model.load_weights(MODEL_WEIGHTS_FILE)
 
 std, mean =1.11689766115, 3.58171208604
