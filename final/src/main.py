@@ -1,17 +1,3 @@
-# See notebook
-#   https://www.kaggle.com/aharless/probabilistic-version-of-small-improvements/notebook
-# for some explanation of small improvements
-
-# Parameters
-prediction_stderr = 0.02  #  assumed standard error of predictions
-                          #  (smaller values make output closer to input)
-train_test_logmean_diff = 0.1  # assumed shift used to adjust frequencies for time trend
-probthresh = 100  # minimum probability*frequency to use new price instead of just rounding
-rounder = 2  # number of places left of decimal point to zero
-
-
-# RUN THE MODELS
-
 import numpy as np
 import pandas as pd
 from sklearn import model_selection, preprocessing
@@ -19,7 +5,7 @@ import xgboost as xgb
 import datetime
 from scipy.stats import norm
 import sys
-
+import os
 np.random.seed(int(sys.argv[1]))
 
 #load files
@@ -451,8 +437,6 @@ df_sub = pd.DataFrame({'id': id_test, 'price_doc': y_pred})
 
 ####################################################################################################3
 
-
-
 first_result = output.merge(df_sub, on="id", suffixes=['_louis','_bruno'])
 first_result["price_doc"] = np.exp( .714*np.log(first_result.price_doc_louis) +
                                     .286*np.log(first_result.price_doc_bruno) )
@@ -464,68 +448,4 @@ result["price_doc"] = np.exp( .78*np.log(result.price_doc_follow) +
 result["price_doc"] =result["price_doc"] *0.9915
 result.drop(["price_doc_louis","price_doc_bruno","price_doc_follow","price_doc_gunja"],axis=1,inplace=True)
 result.head()
-result.to_csv('{}'.format(sys.argv[1]), index=False)
-'''
-
-# APPLY PROBABILISTIC IMPROVEMENTS
-
-preds = result
-train = pd.read_csv('../input/train.csv')
-test = pd.read_csv('../input/test.csv')
-
-# Select investment sales from training set and generate frequency distribution
-invest = train[train.product_type=="Investment"]
-freqs = invest.price_doc.value_counts().sort_index()
-
-# Select investment sales from test set predictions
-test_invest_ids = test[test.product_type=="Investment"]["id"]
-invest_preds = pd.DataFrame(test_invest_ids).merge(preds, on="id")
-
-# Express X-axis of training set frequency distribution as logarithms,
-#    and save standard deviation to help adjust frequencies for time trend.
-lnp = np.log(invest.price_doc)
-stderr = lnp.std()
-lfreqs = lnp.value_counts().sort_index()
-
-# Adjust frequencies for time trend
-lnp_diff = train_test_logmean_diff
-lnp_mean = lnp.mean()
-lnp_newmean = lnp_mean + lnp_diff
-
-def norm_diff(value):
-    return norm.pdf((value-lnp_diff)/stderr) / norm.pdf(value/stderr)
-
-newfreqs = lfreqs * (pd.Series(lfreqs.index.values-lnp_newmean).apply(norm_diff).values)
-
-# Logs of model-predicted prices
-lnpred = np.log(invest_preds.price_doc)
-
-# Create assumed probability distributions
-stderr = prediction_stderr
-mat =(np.array(newfreqs.index.values)[:,np.newaxis] - np.array(lnpred)[np.newaxis,:])/stderr
-modelprobs = norm.pdf(mat)
-
-# Multiply by frequency distribution.
-freqprobs = pd.DataFrame( np.multiply( np.transpose(modelprobs), newfreqs.values ) )
-freqprobs.index = invest_preds.price_doc.values
-freqprobs.columns = freqs.index.values.tolist()
-
-# Find mode for each case.
-prices = freqprobs.idxmax(axis=1)
-
-# Apply threshold to exclude low-confidence cases from recoding
-priceprobs = freqprobs.max(axis=1)
-mask = priceprobs<probthresh
-prices[mask] = np.round(prices[mask].index,-rounder)
-
-# Data frame with new predicitons
-newpricedf = pd.DataFrame( {"id":test_invest_ids.values, "price_doc":prices} )
-
-# Merge these new predictions (for just investment properties) back into the full prediction set.
-newpreds = preds.merge(newpricedf, on="id", how="left", suffixes=("_old",""))
-newpreds.loc[newpreds.price_doc.isnull(),"price_doc"] = newpreds.price_doc_old
-newpreds.drop("price_doc_old",axis=1,inplace=True)
-newpreds.head()
-
-newpreds.to_csv('different_result.csv', index=False)
-'''
+result.to_csv(os.path.join('CSVs', '{}'.format(sys.argv[1])), index=False)
