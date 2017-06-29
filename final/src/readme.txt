@@ -1,3 +1,4 @@
+Sberbank Russian Housing Market
 Usage:
 
-bash best.csv output_filename
+bash best.sh output_filename
