@@ -1,4 +1,4 @@
 Sberbank Russian Housing Market
-Usage:
+https://www.kaggle.com/c/sberbank-russian-housing-market
 
-bash best.sh output_filename
+Usage: bash best.sh output_filename
