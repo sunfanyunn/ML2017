@@ -3,7 +3,7 @@
 + *Predict PM2.5* using linear regression. 
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw1-pm2-5).
 
-+ *Predict income* using logistic regression and gradient boosting tree.
++ *Predict income* using logistic regression
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw2).
 
 + *Image sentiment classification* using convolutional neural network (CNN).
@@ -15,5 +15,5 @@
 + *Predict tags for each summary of a book* using recurrent neural network (RNN).
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw5).
 
-+ *Predict movie ratings* using SVD and SVD++.
++ *Predict movie ratings* using SVD
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw6).
