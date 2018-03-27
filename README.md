@@ -15,5 +15,5 @@
 + *Predict tags for each summary of a book* using recurrent neural network (RNN).
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw5).
 
-+ *Predict movie ratings* using SVD
++ *Predict movie ratings* using collaborative filtering and deep method
 [kaggle competition](https://inclass.kaggle.com/c/ml2017-hw6).
